@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Um Mapa Interativo para Análise de Cancelamento de Corridas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #upload-section {
+            margin-bottom: 20px;
+        }
+
+        #map-btn {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #map-btn:hover {
+            background-color: #0056b3;
+        }
+
+        #file-input {
+            margin-top: 10px;
+        }
+
+        .instructions {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Um Mapa Interativo para Análise de Cancelamento de Corridas</h1>
+
+    <div class="instructions">
+        <p>Bem-vindo! Nesta página, você pode carregar os dados de corridas de aplicativos de mobilidade urbana (como Uber ou táxi), que serão integrados aos dados geoespaciais e sociodemográficos já disponíveis.</p>
+        <p>Após carregar o arquivo, você poderá navegar para o mapa interativo e visualizar análises baseadas nas características pessoais, temporais e espaciais das corridas.</p>
+    </div>
+
+    <!-- Seção de upload de arquivo -->
+    <div id="upload-section">
+        <h2>Carregue seus dados:</h2>
+        <input type="file" id="file-input" accept=".csv,.json" />
+        <button onclick="processFile()">Carregar Dados</button>
+        <p id="file-status"></p>
+    </div>
+
+    <!-- Botão para navegar para o mapa -->
+    <a id="map-btn" href="mapas.html">Ir para o Mapa Interativo</a>
+
+    <script>
+        function processFile() {
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            const fileStatus = document.getElementById('file-status');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const data = event.target.result;
+                    // Aqui, você pode processar os dados e salvá-los localmente ou enviá-los para uma API
+                    console.log(data);
+                    fileStatus.textContent = "Arquivo carregado com sucesso: " + file.name;
+                };
+                reader.readAsText(file);
+            } else {
+                fileStatus.textContent = "Por favor, selecione um arquivo primeiro.";
+            }
+        }
+    </script>
+</body>
+</html>
