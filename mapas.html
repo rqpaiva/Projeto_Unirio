@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Interativo - Dados Censo e Favelas</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Mapa Interativo com Dados do Censo 2022 e Limite de Favelas</h1>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Inicializar o mapa
+        var map = L.map('map').setView([-22.9068, -43.1729], 11);  // Coordenadas do Rio de Janeiro
+
+        // Adicionar camada de mapa base (OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Função para adicionar dados GeoJSON do Censo 2022
+        function addGeoJsonCenso() {
+            fetch('Censo_2022__População_e_domicílios_por_bairros_(dados_preliminares).geojson')
+                .then(response => response.json())
+                .then(data => {
+                    L.geoJSON(data, {
+                        style: {
+                            color: '#0000FF',  // Cor dos limites dos bairros
+                            weight: 2
+                        }
+                    }).addTo(map).bindPopup('Dados Censo 2022');
+                });
+        }
+
+        // Função para adicionar dados GeoJSON dos Limites de Favelas
+        function addGeoJsonFavelas() {
+            fetch('Limite_Favelas_2019.geojson')
+                .then(response => response.json())
+                .then(data => {
+                    L.geoJSON(data, {
+                        style: {
+                            color: '#FF0000',  // Cor dos limites das favelas
+                            weight: 2
+                        }
+                    }).addTo(map).bindPopup('Limite de Favelas 2019');
+                });
+        }
+
+        // Carregar dados GeoJSON no mapa
+        addGeoJsonCenso();
+        addGeoJsonFavelas();
+    </script>
+</body>
+</html>
