@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Um Mapa Interativo para Análise de Cancelamento de Corridas</title>
+    <title>Análise de Cancelamento de Corridas - Danfo.js</title>
+    <script src="https://cdn.jsdelivr.net/npm/danfojs@0.4.0/lib/bundle.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -19,41 +20,37 @@
             margin-bottom: 20px;
         }
 
-        #map-btn {
-            display: inline-block;
-            padding: 10px 15px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        #map-btn:hover {
-            background-color: #0056b3;
-        }
-
-        #file-input {
-            margin-top: 10px;
-        }
-
-        .instructions {
-            margin-bottom: 20px;
-        }
-
         #file-status {
             margin-top: 10px;
             color: green;
+        }
+
+        #analysis-result {
+            margin-top: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
         }
     </style>
 </head>
 <body>
 
-    <h1>Um Mapa Interativo para Análise de Cancelamento de Corridas</h1>
+    <h1>Análise de Cancelamento de Corridas</h1>
 
     <div class="instructions">
-        <p>Bem-vindo! Nesta página, você pode carregar os dados de corridas de aplicativos de mobilidade urbana (como Uber ou táxi), que serão integrados aos dados geoespaciais e sociodemográficos já disponíveis.</p>
-        <p>Após carregar o arquivo, você poderá navegar para o mapa interativo e visualizar análises baseadas nas características pessoais, temporais e espaciais das corridas.</p>
+        <p>Carregue os dados de um aplicativo de mobilidade urbana para realizar uma análise estatística das características das corridas.</p>
     </div>
 
     <!-- Seção de upload de arquivo -->
@@ -64,8 +61,11 @@
         <p id="file-status"></p>
     </div>
 
-    <!-- Botão para navegar para o mapa -->
-    <a id="map-btn" href="mapas.html">Ir para o Mapa Interativo</a>
+    <!-- Seção de resultados da análise -->
+    <div id="analysis-result">
+        <h2>Resultado da Análise</h2>
+        <div id="summary"></div>
+    </div>
 
     <script>
         let userData = null;  // Variável global para armazenar os dados carregados
@@ -77,21 +77,18 @@
 
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function (event) {
-                    userData = event.target.result;  // Armazena os dados carregados na variável global
-                    console.log(userData);  // Exibe o conteúdo dos dados no console para verificação
-
-                    // Exibe uma mensagem de sucesso para o usuário
+                reader.onload = async function (event) {
+                    userData = event.target.result;
                     fileStatus.textContent = "Arquivo carregado com sucesso: " + file.name;
 
-                    // Se os dados forem em JSON, você pode fazer parsing com JSON.parse
+                    // Processamento de JSON ou CSV
                     if (file.type === 'application/json') {
                         userData = JSON.parse(userData);
-                    }
-
-                    // Se os dados forem CSV, você pode processá-los aqui
-                    if (file.type === 'text/csv') {
-                        parseCSV(userData);
+                        analyzeData(userData);
+                    } else if (file.type === 'text/csv') {
+                        // Usar Danfo.js para ler CSV
+                        const df = await dfd.readCSV(fileInput.files[0]);
+                        analyzeData(df);
                     }
                 };
                 reader.readAsText(file);
@@ -100,20 +97,22 @@
             }
         }
 
-        // Função simples para processar dados CSV (pode ser expandida conforme necessário)
-        function parseCSV(data) {
-            const lines = data.split("\n");
-            const result = [];
+        // Função para realizar a análise de dados
+        function analyzeData(data) {
+            if (data instanceof dfd.DataFrame) {
+                // Exibe as estatísticas descritivas dos dados CSV usando Danfo.js
+                const summary = data.describe();
+                summary.print();
 
-            // Processa cada linha do arquivo CSV
-            for (let i = 0; i < lines.length; i++) {
-                const row = lines[i].split(",");
-                result.push(row);  // Adiciona cada linha como um array ao resultado
+                // Gera a tabela de estatísticas
+                const summaryTable = summary.to_html();
+                document.getElementById('summary').innerHTML = summaryTable;
+            } else {
+                // Se for JSON, podemos fazer uma análise personalizada aqui (ex: contagem, médias, etc.)
+                document.getElementById('summary').innerHTML = "Análise de dados JSON não implementada ainda.";
             }
-
-            console.log("CSV processado:", result);  // Exibe os dados processados no console
         }
-
     </script>
+
 </body>
 </html>
