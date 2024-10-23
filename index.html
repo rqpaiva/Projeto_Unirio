@@ -82,13 +82,20 @@
                     fileStatus.textContent = "Arquivo carregado com sucesso: " + file.name;
 
                     // Processamento de JSON ou CSV
+                    console.log("Tipo de arquivo:", file.type);  // Verificar o tipo de arquivo
                     if (file.type === 'application/json') {
                         userData = JSON.parse(userData);
+                        console.log("Dados JSON:", userData);  // Verifica se os dados JSON estão corretos
                         analyzeData(userData);
                     } else if (file.type === 'text/csv') {
                         // Usar Danfo.js para ler CSV
-                        const df = await dfd.readCSV(fileInput.files[0]);
-                        analyzeData(df);
+                        try {
+                            const df = await dfd.readCSV(fileInput.files[0]);
+                            console.log("Dados CSV carregados:", df);  // Verifica se os dados CSV foram carregados
+                            analyzeData(df);
+                        } catch (error) {
+                            console.error("Erro ao ler o CSV:", error);  // Mostra erro se o CSV não for lido corretamente
+                        }
                     }
                 };
                 reader.readAsText(file);
@@ -102,6 +109,7 @@
             if (data instanceof dfd.DataFrame) {
                 // Exibe as estatísticas descritivas dos dados CSV usando Danfo.js
                 const summary = data.describe();
+                console.log("Resumo Estatístico:", summary);  // Verifica se o resumo foi gerado
                 summary.print();
 
                 // Gera a tabela de estatísticas
