@@ -87,7 +87,7 @@
                         userData = JSON.parse(userData);
                         console.log("Dados JSON:", userData);  // Verifica se os dados JSON estão corretos
                         analyzeData(userData);
-                    } else if (file.type === 'text/csv') {
+                    } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
                         // Usar Danfo.js para ler CSV
                         try {
                             const df = await dfd.readCSV(fileInput.files[0]);
