@@ -116,9 +116,12 @@
                 const summary = data.describe();
                 console.log("Resumo Estatístico:", summary);
 
-                // Gera a tabela de estatísticas
-                const summaryTable = summary.to_html();
-                document.getElementById('summary').innerHTML = summaryTable;
+                // Gera a tabela de estatísticas e converte para string HTML
+                const summaryTable = summary.toString();
+                document.getElementById('summary').innerHTML = "<pre>" + summaryTable + "</pre>";
+
+                // Exibe o DataFrame no console também
+                summary.print();
             } else {
                 document.getElementById('summary').innerHTML = "Erro: O arquivo carregado não é um DataFrame válido.";
             }
