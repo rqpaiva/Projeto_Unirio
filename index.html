@@ -3,136 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análise de Cancelamento de Corridas - Danfo.js</title>
+    <title>Análise de Cancelamento de Corridas</title>
     <script src="https://cdn.jsdelivr.net/npm/danfojs@1.1.2/lib/bundle.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f9;
-        }
-
-        h1 {
-            color: #333;
-        }
-
-        #upload-section {
-            margin-bottom: 20px;
-        }
-
-        #file-status {
-            margin-top: 10px;
-            color: green;
-        }
-
-        #analysis-result {
-            margin-top: 20px;
-        }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 20px;
-        }
-
-        table, th, td {
-            border: 1px solid black;
-        }
-
-        th, td {
-            padding: 8px;
-            text-align: left;
-        }
-    </style>
 </head>
 <body>
-
     <h1>Análise de Cancelamento de Corridas</h1>
-
-    <div class="instructions">
-        <p>Carregue os dados de um aplicativo de mobilidade urbana para realizar uma análise estatística das características das corridas.</p>
-    </div>
-
-    <!-- Seção de upload de arquivo -->
-    <div id="upload-section">
-        <h2>Carregue seus dados:</h2>
-        <input type="file" id="file-input" accept=".csv" />
-        <button onclick="processFile()">Carregar Dados</button>
-        <p id="file-status"></p>
-    </div>
-
-    <!-- Seção de resultados da análise -->
-    <div id="analysis-result">
-        <h2>Resultado da Análise</h2>
-        <div id="summary"></div>
-    </div>
+    <p>Carregue os dados de um aplicativo de mobilidade urbana para realizar uma análise estatística das características das corridas.</p>
+    
+    <h2>Carregue seus dados:</h2>
+    <input type="file" id="fileInput">
+    <button id="loadButton">Carregar Dados</button>
+    <p id="status"></p>
+    
+    <h2>Resultado da Análise</h2>
+    <p id="analysisResult">Análise de dados JSON não implementada ainda.</p>
 
     <script>
-        let userData = null;  // Variável global para armazenar os dados carregados
+        const fileInput = document.getElementById('fileInput');
+        const loadButton = document.getElementById('loadButton');
+        const statusText = document.getElementById('status');
+        const analysisResult = document.getElementById('analysisResult');
 
-        async function processFile() {
-            const fileInput = document.getElementById('file-input');
+        loadButton.addEventListener('click', async () => {
             const file = fileInput.files[0];
-            const fileStatus = document.getElementById('file-status');
-
-            if (file) {
-                fileStatus.textContent = "Arquivo carregado com sucesso: " + file.name;
-                console.log("Arquivo carregado:", file.name);
-
-                // Verifica se o arquivo é CSV
-                if (file.name.endsWith('.csv')) {
-                    console.log("Processando arquivo CSV...");
-                    try {
-                        const df = await dfd.readCSV(fileInput.files[0]);
-                        console.log("Dados CSV carregados no formato bruto:", df);
-
-                        // Verificar se o DataFrame tem valores
-                        if (df && df.$data && df.$data.length > 0) {
-                            console.log("DataFrame válido. Iniciando análise...");
-                            analyzeData(df);
-                        } else {
-                            console.error("Erro: O DataFrame está vazio ou inválido.");
-                            document.getElementById('summary').innerHTML = "Erro: O DataFrame está vazio ou inválido.";
-                        }
-                    } catch (error) {
-                        console.error("Erro ao ler o CSV:", error);
-                        document.getElementById('summary').innerHTML = "Erro ao processar o arquivo CSV. Detalhes do erro: " + error.message;
-                    }
-                } else {
-                    console.error("Tipo de arquivo não suportado. Apenas arquivos CSV são permitidos.");
-                    document.getElementById('summary').innerHTML = "Tipo de arquivo não suportado. Apenas arquivos CSV são permitidos.";
-                }
-            } else {
-                fileStatus.textContent = "Por favor, selecione um arquivo primeiro.";
+            if (!file) {
+                statusText.innerHTML = "Nenhum arquivo selecionado.";
+                return;
             }
-        }
 
-        // Função para realizar a análise de dados
-        function analyzeData(data) {
-            if (data instanceof dfd.DataFrame) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const csvData = e.target.result;
+
                 try {
-                    console.log("Iniciando análise de dados...");
+                    // Carregar os dados CSV
+                    statusText.innerHTML = "Processando arquivo CSV...";
+                    const df = dfd.readCSV(csvData); // Lendo CSV para DataFrame
+                    
+                    // Verificar tipos de dados
+                    console.log("Tipos de dados das colunas:", df.dtypes);
 
-                    // Exibe as estatísticas descritivas dos dados CSV usando Danfo.js
-                    const summary = data.describe();
-                    console.log("Resumo Estatístico:", summary);
+                    // Remover linhas com valores nulos, se necessário
+                    const dfClean = df.dropna();
+                    console.log("DataFrame após remoção de nulos:", dfClean);
 
-                    // Depuração: ver o conteúdo detalhado do resumo
-                    summary.print();
-                    console.log("Dados de resumo do DataFrame:", summary);
+                    // Exibir algumas linhas para conferência
+                    console.log("Primeiras linhas do DataFrame:", dfClean.head());
 
-                    // Gera a tabela de estatísticas e converte para string HTML
-                    const summaryTable = summary.toString();
-                    document.getElementById('summary').innerHTML = "<pre>" + summaryTable + "</pre>";
+                    // Exibir resultado na página
+                    analysisResult.innerHTML = "Análise realizada com sucesso!";
+                    statusText.innerHTML = `Arquivo carregado com sucesso: ${file.name}`;
+
                 } catch (error) {
-                    console.error("Erro ao gerar o resumo dos dados:", error);
-                    document.getElementById('summary').innerHTML = "Erro ao gerar o resumo dos dados: " + error.message;
+                    console.error("Erro ao processar o arquivo CSV:", error);
+                    statusText.innerHTML = "Erro: O arquivo carregado não é um DataFrame válido.";
                 }
-            } else {
-                document.getElementById('summary').innerHTML = "Erro: O arquivo carregado não é um DataFrame válido.";
-            }
-        }
-    </script>
+            };
 
+            reader.readAsText(file);
+        });
+    </script>
 </body>
 </html>
