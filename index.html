@@ -84,15 +84,23 @@
                     console.log("Processando arquivo CSV...");
                     try {
                         const df = await dfd.readCSV(fileInput.files[0]);
-                        console.log("Dados CSV carregados:", df);
+                        console.log("Dados CSV carregados no formato bruto:", df);
 
-                        // Executa a análise estatística
-                        analyzeData(df);
+                        // Verificar se o DataFrame tem valores
+                        if (df && df.$data && df.$data.length > 0) {
+                            console.log("DataFrame válido. Iniciando análise...");
+                            analyzeData(df);
+                        } else {
+                            console.error("Erro: O DataFrame está vazio ou inválido.");
+                            document.getElementById('summary').innerHTML = "Erro: O DataFrame está vazio ou inválido.";
+                        }
                     } catch (error) {
                         console.error("Erro ao ler o CSV:", error);
+                        document.getElementById('summary').innerHTML = "Erro ao processar o arquivo CSV.";
                     }
                 } else {
                     console.error("Tipo de arquivo não suportado. Apenas arquivos CSV são permitidos.");
+                    document.getElementById('summary').innerHTML = "Tipo de arquivo não suportado. Apenas arquivos CSV são permitidos.";
                 }
             } else {
                 fileStatus.textContent = "Por favor, selecione um arquivo primeiro.";
