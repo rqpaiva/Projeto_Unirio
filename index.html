@@ -1,77 +1,64 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Cancelamento de Corridas</title>
-    <script src="https://cdn.jsdelivr.net/npm/danfojs@1.1.2/lib/bundle.min.js"></script>
 </head>
 <body>
     <h1>Análise de Cancelamento de Corridas</h1>
     <p>Carregue os dados de um aplicativo de mobilidade urbana para realizar uma análise estatística das características das corridas.</p>
-    
+
     <h3>Carregue seus dados:</h3>
-    <input type="file" id="fileInput" />
-    <button id="loadButton">Carregar Dados</button>
-    
-    <p id="status"></p>
+    <input type="file" id="csvFile" accept=".csv">
+    <button onclick="uploadCSV()">Carregar Dados</button>
+    <p id="fileInfo"></p>
     
     <h3>Resultado da Análise</h3>
-    <p id="resultado"></p>
+    <div id="analysisResult"></div>
 
     <script>
-        // Referências aos elementos da página
-        const fileInput = document.getElementById('fileInput');
-        const loadButton = document.getElementById('loadButton');
-        const status = document.getElementById('status');
-        const resultado = document.getElementById('resultado');
-
-        // Função para realizar a análise dos dados após o carregamento
-        function realizarAnalise(df) {
-            // Exemplo simples de análise (contagem de linhas)
-            const numLinhas = df.shape[0];
-            resultado.textContent = `O dataset contém ${numLinhas} linhas após a remoção de valores nulos.`;
-        }
-
-        // Evento ao clicar no botão "Carregar Dados"
-        loadButton.addEventListener('click', function() {
+        function uploadCSV() {
+            const fileInput = document.getElementById('csvFile');
             const file = fileInput.files[0];
-            if (!file) {
-                status.textContent = "Por favor, selecione um arquivo.";
-                return;
-            }
-
-            status.textContent = `Arquivo carregado: ${file.name}`;
-            
             const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = e.target.result;
 
-                // Carregar e processar CSV usando Danfo.js
-                dfd.readCSV(data).then((df) => {
-                    status.textContent = "Dados CSV carregados com sucesso.";
-
-                    // Remover valores nulos, se necessário
-                    df.dropNa({ axis: 0 }).then((cleanedDF) => {
-                        console.log(cleanedDF);
-                        realizarAnalise(cleanedDF); // Chamar função de análise
-                    }).catch((err) => {
-                        console.error("Erro ao limpar o DataFrame: ", err);
-                        status.textContent = "Erro ao processar o arquivo CSV.";
+            if (file) {
+                reader.readAsText(file);
+                reader.onload = function (e) {
+                    const csvData = e.target.result;
+                    document.getElementById('fileInfo').innerHTML = 'Arquivo carregado: ' + file.name;
+                    
+                    // URL da API a ser acessada
+                    const apiUrl = 'https://seu-api-url-aqui';
+                    
+                    // Prefixo do proxy CORS Anywhere
+                    const corsProxy = 'https://cors-anywhere.herokuapp.com/';
+                    
+                    // Fazer a solicitação HTTP via proxy CORS Anywhere
+                    fetch(corsProxy + apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ data: csvData })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('analysisResult').innerHTML = 'Resultado da análise: ' + JSON.stringify(data);
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        document.getElementById('analysisResult').innerHTML = 'Erro ao carregar dados: ' + error;
                     });
-                }).catch((err) => {
-                    console.error("Erro ao carregar o CSV: ", err);
-                    status.textContent = "Erro ao carregar os dados do CSV.";
-                });
-            };
-
-            reader.onerror = function(err) {
-                console.error("Erro ao ler o arquivo: ", err);
-                status.textContent = "Erro ao ler o arquivo.";
-            };
-
-            reader.readAsText(file);
-        });
+                };
+                reader.onerror = function (error) {
+                    console.log('Erro na leitura do arquivo: ', error);
+                };
+            } else {
+                document.getElementById('fileInfo').innerHTML = 'Nenhum arquivo selecionado.';
+            }
+        }
     </script>
 </body>
 </html>
