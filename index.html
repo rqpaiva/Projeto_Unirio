@@ -4,60 +4,70 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Cancelamento de Corridas</title>
-    <script src="https://cdn.jsdelivr.net/npm/danfojs@1.1.2/lib/bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/danfojs@1.1.2/lib/bundle.min.js"></script>
 </head>
 <body>
     <h1>Análise de Cancelamento de Corridas</h1>
     <p>Carregue os dados de um aplicativo de mobilidade urbana para realizar uma análise estatística das características das corridas.</p>
     
-    <h2>Carregue seus dados:</h2>
-    <input type="file" id="fileInput">
+    <h3>Carregue seus dados:</h3>
+    <input type="file" id="fileInput" />
     <button id="loadButton">Carregar Dados</button>
+    
     <p id="status"></p>
     
-    <h2>Resultado da Análise</h2>
-    <p id="analysisResult">Análise de dados JSON não implementada ainda.</p>
+    <h3>Resultado da Análise</h3>
+    <p id="resultado"></p>
 
     <script>
+        // Referências aos elementos da página
         const fileInput = document.getElementById('fileInput');
         const loadButton = document.getElementById('loadButton');
-        const statusText = document.getElementById('status');
-        const analysisResult = document.getElementById('analysisResult');
+        const status = document.getElementById('status');
+        const resultado = document.getElementById('resultado');
 
-        loadButton.addEventListener('click', async () => {
+        // Função para realizar a análise dos dados após o carregamento
+        function realizarAnalise(df) {
+            // Exemplo simples de análise (contagem de linhas)
+            const numLinhas = df.shape[0];
+            resultado.textContent = `O dataset contém ${numLinhas} linhas após a remoção de valores nulos.`;
+        }
+
+        // Evento ao clicar no botão "Carregar Dados"
+        loadButton.addEventListener('click', function() {
             const file = fileInput.files[0];
             if (!file) {
-                statusText.innerHTML = "Nenhum arquivo selecionado.";
+                status.textContent = "Por favor, selecione um arquivo.";
                 return;
             }
 
+            status.textContent = `Arquivo carregado: ${file.name}`;
+            
             const reader = new FileReader();
-            reader.onload = async (e) => {
-                const csvData = e.target.result;
+            reader.onload = function(e) {
+                const data = e.target.result;
 
-                try {
-                    // Carregar os dados CSV
-                    statusText.innerHTML = "Processando arquivo CSV...";
-                    const df = dfd.readCSV(csvData); // Lendo CSV para DataFrame
-                    
-                    // Verificar tipos de dados
-                    console.log("Tipos de dados das colunas:", df.dtypes);
+                // Carregar e processar CSV usando Danfo.js
+                dfd.readCSV(data).then((df) => {
+                    status.textContent = "Dados CSV carregados com sucesso.";
 
-                    // Remover linhas com valores nulos, se necessário
-                    const dfClean = df.dropna();
-                    console.log("DataFrame após remoção de nulos:", dfClean);
+                    // Remover valores nulos, se necessário
+                    df.dropNa({ axis: 0 }).then((cleanedDF) => {
+                        console.log(cleanedDF);
+                        realizarAnalise(cleanedDF); // Chamar função de análise
+                    }).catch((err) => {
+                        console.error("Erro ao limpar o DataFrame: ", err);
+                        status.textContent = "Erro ao processar o arquivo CSV.";
+                    });
+                }).catch((err) => {
+                    console.error("Erro ao carregar o CSV: ", err);
+                    status.textContent = "Erro ao carregar os dados do CSV.";
+                });
+            };
 
-                    // Exibir algumas linhas para conferência
-                    console.log("Primeiras linhas do DataFrame:", dfClean.head());
-
-                    // Exibir resultado na página
-                    analysisResult.innerHTML = "Análise realizada com sucesso!";
-                    statusText.innerHTML = `Arquivo carregado com sucesso: ${file.name}`;
-
-                } catch (error) {
-                    console.error("Erro ao processar o arquivo CSV:", error);
-                    statusText.innerHTML = "Erro: O arquivo carregado não é um DataFrame válido.";
-                }
+            reader.onerror = function(err) {
+                console.error("Erro ao ler o arquivo: ", err);
+                status.textContent = "Erro ao ler o arquivo.";
             };
 
             reader.readAsText(file);
