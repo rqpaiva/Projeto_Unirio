@@ -56,7 +56,7 @@
     <!-- Seção de upload de arquivo -->
     <div id="upload-section">
         <h2>Carregue seus dados:</h2>
-        <input type="file" id="file-input" accept=".csv,.json" />
+        <input type="file" id="file-input" accept=".csv" />
         <button onclick="processFile()">Carregar Dados</button>
         <p id="file-status"></p>
     </div>
@@ -70,39 +70,30 @@
     <script>
         let userData = null;  // Variável global para armazenar os dados carregados
 
-        function processFile() {
+        async function processFile() {
             const fileInput = document.getElementById('file-input');
             const file = fileInput.files[0];
             const fileStatus = document.getElementById('file-status');
 
             if (file) {
-                const reader = new FileReader();
-                reader.onload = async function (event) {
-                    userData = event.target.result;
-                    fileStatus.textContent = "Arquivo carregado com sucesso: " + file.name;
-                    console.log("Arquivo carregado:", file.name);  // Exibe o nome do arquivo carregado
+                fileStatus.textContent = "Arquivo carregado com sucesso: " + file.name;
+                console.log("Arquivo carregado:", file.name);
 
-                    // Verificar o tipo de arquivo e exibir no console
-                    console.log("Tipo de arquivo:", file.type);
+                // Verifica se o arquivo é CSV
+                if (file.name.endsWith('.csv')) {
+                    console.log("Processando arquivo CSV...");
+                    try {
+                        const df = await dfd.readCSV(fileInput.files[0]);
+                        console.log("Dados CSV carregados:", df);
 
-                    if (file.type === 'application/json') {
-                        userData = JSON.parse(userData);
-                        console.log("Dados JSON:", userData);  // Verifica se os dados JSON estão corretos
-                        analyzeData(userData);
-                    } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
-                        console.log("Tentando ler o arquivo CSV...");
-                        try {
-                            const df = await dfd.readCSV(fileInput.files[0]);
-                            console.log("Dados CSV carregados:", df);  // Exibe os dados CSV carregados no console
-                            analyzeData(df);
-                        } catch (error) {
-                            console.error("Erro ao ler o CSV:", error);  // Mostra erro se o CSV não for lido corretamente
-                        }
-                    } else {
-                        console.log("Tipo de arquivo desconhecido");
+                        // Executa a análise estatística
+                        analyzeData(df);
+                    } catch (error) {
+                        console.error("Erro ao ler o CSV:", error);
                     }
-                };
-                reader.readAsText(file);
+                } else {
+                    console.error("Tipo de arquivo não suportado. Apenas arquivos CSV são permitidos.");
+                }
             } else {
                 fileStatus.textContent = "Por favor, selecione um arquivo primeiro.";
             }
@@ -112,17 +103,16 @@
         function analyzeData(data) {
             if (data instanceof dfd.DataFrame) {
                 console.log("Iniciando análise de dados...");
+
                 // Exibe as estatísticas descritivas dos dados CSV usando Danfo.js
                 const summary = data.describe();
-                console.log("Resumo Estatístico:", summary);  // Verifica se o resumo foi gerado
-                summary.print();
+                console.log("Resumo Estatístico:", summary);
 
                 // Gera a tabela de estatísticas
                 const summaryTable = summary.to_html();
                 document.getElementById('summary').innerHTML = summaryTable;
             } else {
-                console.log("Formato de dados não suportado. Exibindo mensagem JSON.");
-                document.getElementById('summary').innerHTML = "Análise de dados JSON não implementada ainda.";
+                document.getElementById('summary').innerHTML = "Erro: O arquivo carregado não é um DataFrame válido.";
             }
         }
     </script>
