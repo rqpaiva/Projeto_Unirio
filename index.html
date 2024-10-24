@@ -96,7 +96,7 @@
                         }
                     } catch (error) {
                         console.error("Erro ao ler o CSV:", error);
-                        document.getElementById('summary').innerHTML = "Erro ao processar o arquivo CSV.";
+                        document.getElementById('summary').innerHTML = "Erro ao processar o arquivo CSV. Detalhes do erro: " + error.message;
                     }
                 } else {
                     console.error("Tipo de arquivo não suportado. Apenas arquivos CSV são permitidos.");
@@ -110,19 +110,24 @@
         // Função para realizar a análise de dados
         function analyzeData(data) {
             if (data instanceof dfd.DataFrame) {
-                console.log("Iniciando análise de dados...");
+                try {
+                    console.log("Iniciando análise de dados...");
 
-                // Exibe as estatísticas descritivas dos dados CSV usando Danfo.js
-                const summary = data.describe();
-                console.log("Resumo Estatístico:", summary);
+                    // Exibe as estatísticas descritivas dos dados CSV usando Danfo.js
+                    const summary = data.describe();
+                    console.log("Resumo Estatístico:", summary);
 
-                // Depuração: ver o conteúdo detalhado do resumo
-                summary.print();
-                console.log("Dados de resumo do DataFrame:", summary);
+                    // Depuração: ver o conteúdo detalhado do resumo
+                    summary.print();
+                    console.log("Dados de resumo do DataFrame:", summary);
 
-                // Gera a tabela de estatísticas e converte para string HTML
-                const summaryTable = summary.toString();
-                document.getElementById('summary').innerHTML = "<pre>" + summaryTable + "</pre>";
+                    // Gera a tabela de estatísticas e converte para string HTML
+                    const summaryTable = summary.toString();
+                    document.getElementById('summary').innerHTML = "<pre>" + summaryTable + "</pre>";
+                } catch (error) {
+                    console.error("Erro ao gerar o resumo dos dados:", error);
+                    document.getElementById('summary').innerHTML = "Erro ao gerar o resumo dos dados: " + error.message;
+                }
             } else {
                 document.getElementById('summary').innerHTML = "Erro: O arquivo carregado não é um DataFrame válido.";
             }
