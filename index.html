@@ -80,22 +80,26 @@
                 reader.onload = async function (event) {
                     userData = event.target.result;
                     fileStatus.textContent = "Arquivo carregado com sucesso: " + file.name;
+                    console.log("Arquivo carregado:", file.name);  // Exibe o nome do arquivo carregado
 
-                    // Processamento de JSON ou CSV
-                    console.log("Tipo de arquivo:", file.type);  // Verificar o tipo de arquivo
+                    // Verificar o tipo de arquivo e exibir no console
+                    console.log("Tipo de arquivo:", file.type);
+
                     if (file.type === 'application/json') {
                         userData = JSON.parse(userData);
                         console.log("Dados JSON:", userData);  // Verifica se os dados JSON estão corretos
                         analyzeData(userData);
                     } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
-                        // Usar Danfo.js para ler CSV
+                        console.log("Tentando ler o arquivo CSV...");
                         try {
                             const df = await dfd.readCSV(fileInput.files[0]);
-                            console.log("Dados CSV carregados:", df);  // Verifica se os dados CSV foram carregados
+                            console.log("Dados CSV carregados:", df);  // Exibe os dados CSV carregados no console
                             analyzeData(df);
                         } catch (error) {
                             console.error("Erro ao ler o CSV:", error);  // Mostra erro se o CSV não for lido corretamente
                         }
+                    } else {
+                        console.log("Tipo de arquivo desconhecido");
                     }
                 };
                 reader.readAsText(file);
@@ -107,6 +111,7 @@
         // Função para realizar a análise de dados
         function analyzeData(data) {
             if (data instanceof dfd.DataFrame) {
+                console.log("Iniciando análise de dados...");
                 // Exibe as estatísticas descritivas dos dados CSV usando Danfo.js
                 const summary = data.describe();
                 console.log("Resumo Estatístico:", summary);  // Verifica se o resumo foi gerado
@@ -116,7 +121,7 @@
                 const summaryTable = summary.to_html();
                 document.getElementById('summary').innerHTML = summaryTable;
             } else {
-                // Se for JSON, podemos fazer uma análise personalizada aqui (ex: contagem, médias, etc.)
+                console.log("Formato de dados não suportado. Exibindo mensagem JSON.");
                 document.getElementById('summary').innerHTML = "Análise de dados JSON não implementada ainda.";
             }
         }
