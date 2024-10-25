@@ -1,194 +1,88 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Cancelamento de Corridas</title>
+    <!-- Biblioteca Leaflet para o mapa -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Adicionando o Papa Parse -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
     <style>
-        #map { height: 400px; width: 100%; }
-        .stats-container {
-            display: flex;
-            justify-content: space-between;
-            margin: 20px 0;
-        }
-        .stat-box {
-            width: 30%;
-            padding: 10px;
-            background-color: #f4f4f4;
-            border-radius: 5px;
-        }
-        .chart-container {
-            width: 45%;
-            height: 400px;
-        }
+        #map { height: 400px; }
+        body { font-family: Arial, sans-serif; }
+        .content { width: 80%; margin: 0 auto; }
     </style>
 </head>
 <body>
-    <h1>Análise de Cancelamento de Corridas</h1>
-    <p>Carregue os dados de um aplicativo de mobilidade urbana para realizar uma análise estatística e visualização interativa das características das corridas.</p>
+    <div class="content">
+        <h1>Análise de Cancelamento de Corridas</h1>
+        <p>Carregue os dados de um aplicativo de mobilidade urbana para realizar uma análise estatística e visualização interativa das características das corridas.</p>
 
-    <div>
-        <input type="file" id="fileInput" />
-        <button onclick="carregarArquivo()">Carregar Dados</button>
-    </div>
+        <h2>Carregue seus dados:</h2>
+        <input type="file" id="fileInput">
+        <button onclick="processarDados()">Carregar Dados</button>
 
-    <h2>Resumo da Análise</h2>
-    <div id="resumo"></div>
+        <h3>Resumo da Análise</h3>
+        <div id="resumo"></div>
 
-    <h2>Visualizações</h2>
-    <div id="map"></div>
-
-    <div class="stats-container">
-        <div class="stat-box">
-            <h3>Total de Corridas</h3>
-            <p id="totalCorridas"></p>
-        </div>
-        <div class="stat-box">
-            <h3>Total de Motoristas</h3>
-            <p id="totalMotoristas"></p>
-        </div>
-        <div class="stat-box">
-            <h3>Cancelamentos por Motivo</h3>
-            <canvas id="cancelamentosChart"></canvas>
-        </div>
-    </div>
-
-    <div class="stats-container">
-        <div class="chart-container">
-            <canvas id="generoMotoristasChart"></canvas>
-        </div>
-        <div class="chart-container">
-            <canvas id="racaMotoristasChart"></canvas>
-        </div>
+        <h3>Visualizações</h3>
+        <div id="map"></div>
     </div>
 
     <script>
-        let map;
-        let censoGeoJSON;
-        let favelasGeoJSON;
-        let cancelamentosChart, generoMotoristasChart, racaMotoristasChart;
+        // Função para processar os dados CSV
+        function processarDados() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
 
-        // Inicializar o mapa
-        function initMap() {
-            map = L.map('map').setView([-22.9068, -43.1729], 12); // Coordenadas para o Rio de Janeiro
+            if (!file) {
+                alert('Por favor, selecione um arquivo CSV.');
+                return;
+            }
+
+            // Usando Papa Parse para analisar o arquivo CSV
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                complete: function(results) {
+                    const data = results.data;
+                    console.log(data); // Exibe os dados carregados no console
+
+                    // Exibe o resumo da análise no HTML
+                    document.getElementById('resumo').innerHTML = `
+                        <p>Arquivo carregado: ${file.name}</p>
+                        <p>Total de registros: ${data.length}</p>
+                        <!-- Aqui você pode incluir mais estatísticas a partir dos dados -->
+                    `;
+
+                    // Função que pode exibir as visualizações no mapa
+                    visualizarNoMapa(data);
+                },
+                error: function(error) {
+                    console.error('Erro ao processar o arquivo:', error);
+                    alert('Erro ao processar o arquivo CSV.');
+                }
+            });
+        }
+
+        // Função para configurar e exibir o mapa
+        function visualizarNoMapa(data) {
+            const map = L.map('map').setView([-22.9068, -43.1729], 10); // Foco inicial no Rio de Janeiro
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+                attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
 
-            // Carregar os dados GeoJSON das favelas e censo
-            fetch('Limite_Favelas_2019.geojson')
-                .then(response => response.json())
-                .then(data => {
-                    favelasGeoJSON = L.geoJSON(data).addTo(map);
-                });
-
-            fetch('Censo_2022__População_e_domicílios_por_bairros_(dados_preliminares).geojson')
-                .then(response => response.json())
-                .then(data => {
-                    censoGeoJSON = L.geoJSON(data).addTo(map);
-                });
-        }
-
-        // Carregar e processar arquivo CSV
-        function carregarArquivo() {
-            const fileInput = document.getElementById('fileInput').files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const csvData = e.target.result;
-                processarDados(csvData);
-            };
-            reader.readAsText(fileInput);
-        }
-
-        // Processar e analisar os dados CSV
-        function processarDados(csvData) {
-            // Implementar lógica de parsing do CSV para JSON (use uma biblioteca como PapaParse)
-            const parsedData = Papa.parse(csvData, { header: true, dynamicTyping: true }).data;
-
-            // Calcular as estatísticas solicitadas
-            const totalCorridas = parsedData.length;
-            const motoristas = new Set(parsedData.map(c => c.driver_id));
-            const totalMotoristas = motoristas.size;
-            const corridasCanceladasMotorista = parsedData.filter(c => c.status === 'cancelado_motorista').length;
-            const corridasCanceladasPassageiro = parsedData.filter(c => c.status === 'cancelado_passageiro').length;
-
-            // Atualizar o HTML com as estatísticas
-            document.getElementById('totalCorridas').innerText = totalCorridas;
-            document.getElementById('totalMotoristas').innerText = totalMotoristas;
-
-            // Configurar gráficos de cancelamentos e gênero/raça dos motoristas
-            renderCharts(parsedData, corridasCanceladasMotorista, corridasCanceladasPassageiro);
-            adicionarRotasNoMapa(parsedData);
-        }
-
-        // Adicionar rotas das corridas canceladas no mapa
-        function adicionarRotasNoMapa(data) {
-            data.forEach(corrida => {
-                if (corrida.status === 'cancelado_motorista' || corrida.status === 'cancelado_passageiro') {
-                    const origem = [corrida.origin_lat, corrida.origin_lng];
-                    const destino = [corrida.destin_lat, corrida.destin_lng];
-
-                    L.polyline([origem, destino], { color: 'red' }).addTo(map);
+            // Exemplo de visualização com coordenadas do arquivo de dados (ajuste conforme necessário)
+            data.forEach(item => {
+                if (item.latitude && item.longitude) {
+                    L.marker([item.latitude, item.longitude]).addTo(map);
                 }
             });
         }
-
-        // Renderizar gráficos
-        function renderCharts(data, cancelamentosMotorista, cancelamentosPassageiro) {
-            const ctx1 = document.getElementById('cancelamentosChart').getContext('2d');
-            cancelamentosChart = new Chart(ctx1, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Cancelado pelo Motorista', 'Cancelado pelo Passageiro'],
-                    datasets: [{
-                        data: [cancelamentosMotorista, cancelamentosPassageiro],
-                        backgroundColor: ['#ff6384', '#36a2eb']
-                    }]
-                }
-            });
-
-            const generoData = data.reduce((acc, corrida) => {
-                acc[corrida.driver_gender] = (acc[corrida.driver_gender] || 0) + 1;
-                return acc;
-            }, {});
-
-            const ctx2 = document.getElementById('generoMotoristasChart').getContext('2d');
-            generoMotoristasChart = new Chart(ctx2, {
-                type: 'pie',
-                data: {
-                    labels: Object.keys(generoData),
-                    datasets: [{
-                        data: Object.values(generoData),
-                        backgroundColor: ['#ffcd56', '#4bc0c0', '#ff6384']
-                    }]
-                }
-            });
-
-            const racaData = data.reduce((acc, corrida) => {
-                acc[corrida.driver_race] = (acc[corrida.driver_race] || 0) + 1;
-                return acc;
-            }, {});
-
-            const ctx3 = document.getElementById('racaMotoristasChart').getContext('2d');
-            racaMotoristasChart = new Chart(ctx3, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(racaData),
-                    datasets: [{
-                        data: Object.values(racaData),
-                        backgroundColor: '#36a2eb'
-                    }]
-                }
-            });
-        }
-
-        // Inicializar o mapa e os dados assim que a página carregar
-        window.onload = function() {
-            initMap();
-        };
     </script>
 </body>
 </html>
