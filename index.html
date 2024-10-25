@@ -1,88 +1,149 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Cancelamento de Corridas</title>
-    <!-- Biblioteca Leaflet para o mapa -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-
-    <!-- Adicionando o Papa Parse -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-
     <style>
-        #map { height: 400px; }
-        body { font-family: Arial, sans-serif; }
-        .content { width: 80%; margin: 0 auto; }
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+        body {
+            font-family: Arial, sans-serif;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        #resumo {
+            margin: 20px 0;
+        }
+        #upload {
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
-    <div class="content">
-        <h1>Análise de Cancelamento de Corridas</h1>
-        <p>Carregue os dados de um aplicativo de mobilidade urbana para realizar uma análise estatística e visualização interativa das características das corridas.</p>
+    <h1>Análise de Cancelamento de Corridas</h1>
+    <p>Carregue os dados de um aplicativo de mobilidade urbana para realizar uma análise estatística e visualização interativa das características das corridas.</p>
 
-        <h2>Carregue seus dados:</h2>
-        <input type="file" id="fileInput">
-        <button onclick="processarDados()">Carregar Dados</button>
-
-        <h3>Resumo da Análise</h3>
-        <div id="resumo"></div>
-
-        <h3>Visualizações</h3>
-        <div id="map"></div>
+    <div>
+        <label for="upload">Carregue seus dados:</label>
+        <input type="file" id="upload" />
     </div>
 
+    <div id="resumo">
+        <h2>Resumo da Análise</h2>
+        <p id="total-corridas">Total de corridas: </p>
+        <p id="canceladas-motorista">Percentual de corridas canceladas pelo motorista: </p>
+        <p id="canceladas-passageiro">Percentual de corridas canceladas pelo passageiro: </p>
+        <p id="percentual-genero">Percentual de motoristas por gênero: </p>
+        <p id="percentual-raça">Percentual de motoristas por raça: </p>
+        <p id="percentual-faixa-etaria">Percentual de motoristas por faixa etária: </p>
+        <p id="media-avaliacao">Média das avaliações dos motoristas: </p>
+    </div>
+
+    <h3>Visualizações</h3>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    
     <script>
-        // Função para processar os dados CSV
-        function processarDados() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
+        // Inicialização do mapa Leaflet
+        var map = L.map('map').setView([-22.9068, -43.1729], 10);  // Coordenadas do Rio de Janeiro
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
 
-            if (!file) {
-                alert('Por favor, selecione um arquivo CSV.');
-                return;
+        // Carregando dados GeoJSON
+        fetch('Censo_2022__População_e_domicílios_por_bairros_(dados_preliminares).geojson')
+            .then(response => response.json())
+            .then(data => {
+                L.geoJSON(data).addTo(map);
+            });
+
+        fetch('Limite_Favelas_2019.geojson')
+            .then(response => response.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    style: {
+                        color: "blue",
+                        weight: 2
+                    }
+                }).addTo(map);
+            });
+
+        // Função para processar os dados do CSV
+        function processarDados(dados) {
+            const totalCorridas = dados.length;
+            document.getElementById('total-corridas').innerHTML = `Total de corridas: ${totalCorridas}`;
+
+            // Percentual de corridas canceladas pelo motorista
+            const corridasCanceladasMotorista = dados.filter(corrida => corrida.status === 'Cancelada pelo motorista').length;
+            const percentualCanceladasMotorista = (corridasCanceladasMotorista / totalCorridas * 100).toFixed(2);
+            document.getElementById('canceladas-motorista').innerHTML = `Percentual de corridas canceladas pelo motorista: ${percentualCanceladasMotorista}%`;
+
+            // Percentual de corridas canceladas pelo passageiro
+            const corridasCanceladasPassageiro = dados.filter(corrida => corrida.status === 'Cancelada pelo passageiro').length;
+            const percentualCanceladasPassageiro = (corridasCanceladasPassageiro / totalCorridas * 100).toFixed(2);
+            document.getElementById('canceladas-passageiro').innerHTML = `Percentual de corridas canceladas pelo passageiro: ${percentualCanceladasPassageiro}%`;
+
+            // Percentual de motoristas por gênero
+            const motoristasHomens = dados.filter(corrida => corrida.gender_driver === 'M').length;
+            const motoristasMulheres = dados.filter(corrida => corrida.gender_driver === 'F').length;
+            const percentualHomens = (motoristasHomens / totalCorridas * 100).toFixed(2);
+            const percentualMulheres = (motoristasMulheres / totalCorridas * 100).toFixed(2);
+            document.getElementById('percentual-genero').innerHTML = 
+                `Percentual de motoristas homens: ${percentualHomens}%<br>
+                Percentual de motoristas mulheres: ${percentualMulheres}%`;
+
+            // Percentual de motoristas por raça
+            const motoristasBrancos = dados.filter(corrida => corrida.race_driver === 'Branco').length;
+            const motoristasNegros = dados.filter(corrida => corrida.race_driver === 'Negro').length;
+            const motoristasPardos = dados.filter(corrida => corrida.race_driver === 'Pardo').length;
+            const percentualBrancos = (motoristasBrancos / totalCorridas * 100).toFixed(2);
+            const percentualNegros = (motoristasNegros / totalCorridas * 100).toFixed(2);
+            const percentualPardos = (motoristasPardos / totalCorridas * 100).toFixed(2);
+            document.getElementById('percentual-raça').innerHTML = 
+                `Percentual de motoristas brancos: ${percentualBrancos}%<br>
+                Percentual de motoristas negros: ${percentualNegros}%<br>
+                Percentual de motoristas pardos: ${percentualPardos}%`;
+
+            // Percentual de motoristas por faixa etária
+            const motoristasJovens = dados.filter(corrida => corrida.age_driver < 30).length;
+            const motoristasMeiaIdade = dados.filter(corrida => corrida.age_driver >= 30 && corrida.age_driver < 50).length;
+            const motoristasIdosos = dados.filter(corrida => corrida.age_driver >= 50).length;
+            const percentualJovens = (motoristasJovens / totalCorridas * 100).toFixed(2);
+            const percentualMeiaIdade = (motoristasMeiaIdade / totalCorridas * 100).toFixed(2);
+            const percentualIdosos = (motoristasIdosos / totalCorridas * 100).toFixed(2);
+            document.getElementById('percentual-faixa-etaria').innerHTML = 
+                `Percentual de motoristas jovens: ${percentualJovens}%<br>
+                Percentual de motoristas de meia idade: ${percentualMeiaIdade}%<br>
+                Percentual de motoristas idosos: ${percentualIdosos}%`;
+
+            // Média das avaliações dos motoristas
+            const totalAvaliacoes = dados.reduce((acc, corrida) => acc + (corrida.rating_score || 0), 0);
+            const mediaAvaliacoes = (totalAvaliacoes / totalCorridas).toFixed(2);
+            document.getElementById('media-avaliacao').innerHTML = `Média das avaliações dos motoristas: ${mediaAvaliacoes}`;
+        }
+
+        // Carregando e processando o arquivo CSV
+        document.getElementById('upload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                Papa.parse(file, {
+                    header: true,
+                    dynamicTyping: true,
+                    complete: function(results) {
+                        const dados = results.data;
+                        processarDados(dados);  // Chama a função de processamento
+                    }
+                });
             }
-
-            // Usando Papa Parse para analisar o arquivo CSV
-            Papa.parse(file, {
-                header: true,
-                dynamicTyping: true,
-                complete: function(results) {
-                    const data = results.data;
-                    console.log(data); // Exibe os dados carregados no console
-
-                    // Exibe o resumo da análise no HTML
-                    document.getElementById('resumo').innerHTML = `
-                        <p>Arquivo carregado: ${file.name}</p>
-                        <p>Total de registros: ${data.length}</p>
-                        <!-- Aqui você pode incluir mais estatísticas a partir dos dados -->
-                    `;
-
-                    // Função que pode exibir as visualizações no mapa
-                    visualizarNoMapa(data);
-                },
-                error: function(error) {
-                    console.error('Erro ao processar o arquivo:', error);
-                    alert('Erro ao processar o arquivo CSV.');
-                }
-            });
-        }
-
-        // Função para configurar e exibir o mapa
-        function visualizarNoMapa(data) {
-            const map = L.map('map').setView([-22.9068, -43.1729], 10); // Foco inicial no Rio de Janeiro
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
-
-            // Exemplo de visualização com coordenadas do arquivo de dados (ajuste conforme necessário)
-            data.forEach(item => {
-                if (item.latitude && item.longitude) {
-                    L.marker([item.latitude, item.longitude]).addTo(map);
-                }
-            });
-        }
+        });
     </script>
 </body>
 </html>
