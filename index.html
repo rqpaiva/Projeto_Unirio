@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,200 +8,155 @@
         body {
             font-family: Arial, sans-serif;
         }
-        #map {
-            height: 400px;
-            width: 100%;
+        h1 {
+            font-size: 2em;
         }
-        .stats {
+        #resumo {
             margin-top: 20px;
-            padding: 10px;
-            background-color: #f4f4f4;
+        }
+        #map {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
         }
     </style>
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 </head>
 <body>
+    <h1>Análise de Cancelamento de Corridas</h1>
+    <p>Carregue os dados de um aplicativo de mobilidade urbana para realizar uma análise estatística e visualização interativa das características das corridas.</p>
 
-<h1>Análise de Cancelamento de Corridas</h1>
-<p>Carregue os dados de um aplicativo de mobilidade urbana para realizar uma análise estatística e visualização interativa das características das corridas.</p>
-
-<div>
-    <label for="arquivo">Carregue seus dados:</label>
-    <input type="file" id="arquivo">
+    <label for="fileInput">Carregue seus dados:</label>
+    <input type="file" id="fileInput">
     <button onclick="carregarDados()">Carregar Dados</button>
-</div>
 
-<div id="resumo" class="stats">
-    <h2>Resumo da Análise</h2>
-    <p>Arquivo carregado: <span id="nome-arquivo">Nenhum arquivo selecionado</span></p>
-    <p>Total de corridas: <span id="total-corridas">0</span></p>
-    <p>Percentual de corridas canceladas pelo motorista: <span id="percentual-cancelado-motorista">0.00%</span></p>
-    <p>Percentual de corridas canceladas pelo passageiro: <span id="percentual-cancelado-passageiro">0.00%</span></p>
-    <p>Percentual de motoristas homens: <span id="percentual-motoristas-homens">0.00%</span></p>
-    <p>Percentual de motoristas mulheres: <span id="percentual-motoristas-mulheres">0.00%</span></p>
-    <p>Percentual de motoristas brancos: <span id="percentual-motoristas-brancos">0.00%</span></p>
-    <p>Percentual de motoristas negros: <span id="percentual-motoristas-negros">0.00%</span></p>
-    <p>Percentual de motoristas pardos: <span id="percentual-motoristas-pardos">0.00%</span></p>
-    <p>Percentual de motoristas jovens: <span id="percentual-motoristas-jovens">0.00%</span></p>
-    <p>Percentual de motoristas de meia idade: <span id="percentual-motoristas-meia-idade">0.00%</span></p>
-    <p>Percentual de motoristas idosos: <span id="percentual-motoristas-idosos">0.00%</span></p>
-    <p>Média das avaliações dos motoristas: <span id="media-avaliacoes">0.00</span></p>
-</div>
+    <div id="resumo" style="display: none;">
+        <h2>Resumo da Análise</h2>
+        <p id="nomeArquivo"></p>
+        <p>Total de corridas: <span id="totalCorridas">0</span></p>
+        <p>Percentual de corridas canceladas pelo motorista: <span id="percentualCanceladoMotorista">0.00</span>%</p>
+        <p>Percentual de corridas canceladas pelo passageiro: <span id="percentualCanceladoPassageiro">0.00</span>%</p>
+        <p>Percentual de motoristas homens: <span id="percentualMotoristasHomens">0.00</span>%</p>
+        <p>Percentual de motoristas mulheres: <span id="percentualMotoristasMulheres">0.00</span>%</p>
+        <p>Percentual de motoristas jovens: <span id="percentualMotoristasJovens">0.00</span>%</p>
+        <p>Percentual de motoristas de meia idade: <span id="percentualMotoristasMeiaIdade">0.00</span>%</p>
+        <p>Percentual de motoristas idosos: <span id="percentualMotoristasIdosos">0.00</span>%</p>
+        <p>Média das avaliações dos motoristas: <span id="mediaAvaliacaoMotorista">0.00</span></p>
+    </div>
 
-<h3>Visualizações</h3>
-<div id="map"></div>
+    <div id="map"></div>
 
-<script>
-    let map;
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script>
+        // Variável do mapa
+        var map = L.map('map').setView([-22.9068, -43.1729], 10);
 
-    // Função para iniciar o mapa
-    function iniciarMapa() {
-        map = L.map('map').setView([-22.9068, -43.1729], 10);
-
+        // Adicionando o tile layer do OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18,
+            attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // Exemplo de dados GeoJSON (Limites de Favelas)
-        fetch('Limite_Favelas_2019.geojson')
-            .then(response => response.json())
-            .then(data => {
-                L.geoJSON(data).addTo(map);
+        // Função para carregar os dados CSV
+        function carregarDados() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert("Por favor, selecione um arquivo.");
+                return;
+            }
+
+            // Fazendo o parsing do arquivo CSV usando PapaParse
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                complete: function(results) {
+                    console.log("Dados carregados:", results.data);
+                    calcularEstatisticas(results.data);
+                }
             });
-    }
 
-    iniciarMapa();
-
-    // Função para carregar os dados do arquivo CSV
-    function carregarDados() {
-        const input = document.getElementById('arquivo');
-        const file = input.files[0];
-
-        if (!file) {
-            alert('Por favor, selecione um arquivo.');
-            return;
+            document.getElementById('nomeArquivo').innerText = `Arquivo carregado: ${file.name}`;
+            document.getElementById('resumo').style.display = 'block';
         }
 
-        const reader = new FileReader();
-        reader.onload = function (event) {
-            const csvData = event.target.result;
-            processarDados(csvData);
-            document.getElementById('nome-arquivo').textContent = file.name;
-        };
-        reader.readAsText(file);
-    }
+        // Função que processa os dados e calcula as estatísticas
+        function calcularEstatisticas(data) {
+            let totalCorridas = data.length;
 
-    // Função para processar os dados CSV
-    function processarDados(csvData) {
-        const linhas = csvData.split('\n').slice(1); // Remover o cabeçalho
-        const dados = linhas.map(linha => {
-            const colunas = linha.split(',');
-            return {
-                cancelado_pelo_motorista: colunas[0],
-                cancelado_pelo_passageiro: colunas[1],
-                genero_motorista: colunas[2],
-                raca_motorista: colunas[3],
-                idade_motorista: colunas[4],
-                avaliacao_motorista: colunas[5]
-            };
-        });
+            // Inicializando contadores
+            let canceladoPeloMotorista = 0;
+            let canceladoPeloPassageiro = 0;
+            let motoristasHomens = 0;
+            let motoristasMulheres = 0;
+            let motoristasJovens = 0;
+            let motoristasMeiaIdade = 0;
+            let motoristasIdosos = 0;
 
-        console.log("Dados carregados: ", dados);
+            let totalAvaliacao = 0;
+            let totalMotoristasAvaliados = 0;
 
-        calcularEstatisticas(dados);
-    }
+            // Iterando sobre as corridas
+            data.forEach((corrida) => {
+                console.log("Verificando corrida:", corrida);
+                
+                // Verificando o status da corrida
+                if (corrida.status === 'Cancelada pelo motorista') {
+                    canceladoPeloMotorista++;
+                } else if (corrida.status === 'Cancelada pelo passageiro') {
+                    canceladoPeloPassageiro++;
+                }
 
-    // Função para calcular as estatísticas e exibir os resultados
-    function calcularEstatisticas(dados) {
-        const totalCorridas = dados.length;
-        const motoristas = {};
+                // Verificando gênero do motorista
+                if (corrida.motorista_genero === 'Homem') {
+                    motoristasHomens++;
+                } else if (corrida.motorista_genero === 'Mulher') {
+                    motoristasMulheres++;
+                }
 
-        let canceladoPeloMotorista = 0;
-        let canceladoPeloPassageiro = 0;
-        let motoristasHomens = 0;
-        let motoristasMulheres = 0;
-        let motoristasBrancos = 0;
-        let motoristasNegros = 0;
-        let motoristasPardos = 0;
-        let motoristasJovens = 0;
-        let motoristasMeiaIdade = 0;
-        let motoristasIdosos = 0;
-        let somaAvaliacoes = 0;
-        let totalAvaliacoes = 0;
+                // Verificando idade do motorista
+                if (corrida.motorista_idade < 30) {
+                    motoristasJovens++;
+                } else if (corrida.motorista_idade >= 30 && corrida.motorista_idade < 60) {
+                    motoristasMeiaIdade++;
+                } else {
+                    motoristasIdosos++;
+                }
 
-        dados.forEach(corrida => {
-            console.log("Verificando corrida: ", corrida);
-            
-            if (corrida.cancelado_pelo_motorista === 'Sim') {
-                canceladoPeloMotorista++;
-            }
-            if (corrida.cancelado_pelo_passageiro === 'Sim') {
-                canceladoPeloPassageiro++;
-            }
+                // Somando as avaliações dos motoristas
+                if (corrida.avaliacao_motorista) {
+                    totalAvaliacao += parseFloat(corrida.avaliacao_motorista);
+                    totalMotoristasAvaliados++;
+                }
+            });
 
-            if (corrida.genero_motorista === 'Masculino') {
-                motoristasHomens++;
-            } else if (corrida.genero_motorista === 'Feminino') {
-                motoristasMulheres++;
-            }
+            // Calculando as estatísticas
+            let percentualCanceladoMotorista = (canceladoPeloMotorista / totalCorridas) * 100;
+            let percentualCanceladoPassageiro = (canceladoPeloPassageiro / totalCorridas) * 100;
+            let percentualHomens = (motoristasHomens / totalCorridas) * 100;
+            let percentualMulheres = (motoristasMulheres / totalCorridas) * 100;
+            let percentualJovens = (motoristasJovens / totalCorridas) * 100;
+            let percentualMeiaIdade = (motoristasMeiaIdade / totalCorridas) * 100;
+            let percentualIdosos = (motoristasIdosos / totalCorridas) * 100;
+            let mediaAvaliacaoMotorista = totalAvaliacao / totalMotoristasAvaliados;
 
-            if (corrida.raca_motorista === 'Branco') {
-                motoristasBrancos++;
-            } else if (corrida.raca_motorista === 'Negro') {
-                motoristasNegros++;
-            } else if (corrida.raca_motorista === 'Pardo') {
-                motoristasPardos++;
-            }
+            console.log("Resultados parciais:");
+            console.log("Cancelado pelo motorista:", canceladoPeloMotorista);
+            console.log("Cancelado pelo passageiro:", canceladoPeloPassageiro);
+            console.log("Motoristas homens:", motoristasHomens);
+            console.log("Motoristas mulheres:", motoristasMulheres);
 
-            const idadeMotorista = parseInt(corrida.idade_motorista);
-            if (idadeMotorista < 30) {
-                motoristasJovens++;
-            } else if (idadeMotorista >= 30 && idadeMotorista < 60) {
-                motoristasMeiaIdade++;
-            } else if (idadeMotorista >= 60) {
-                motoristasIdosos++;
-            }
-
-            const avaliacao = parseFloat(corrida.avaliacao_motorista);
-            if (!isNaN(avaliacao)) {
-                somaAvaliacoes += avaliacao;
-                totalAvaliacoes++;
-            }
-
-            if (!motoristas[corrida.id_motorista]) {
-                motoristas[corrida.id_motorista] = {
-                    avaliacoes: [],
-                    totalCorridas: 0
-                };
-            }
-            motoristas[corrida.id_motorista].avaliacoes.push(avaliacao);
-            motoristas[corrida.id_motorista].totalCorridas++;
-        });
-
-        console.log("Resultados parciais:");
-        console.log("Cancelado pelo motorista: ", canceladoPeloMotorista);
-        console.log("Cancelado pelo passageiro: ", canceladoPeloPassageiro);
-        console.log("Motoristas homens: ", motoristasHomens);
-        console.log("Motoristas mulheres: ", motoristasMulheres);
-
-        // Atualizando o HTML com os resultados
-        document.getElementById('total-corridas').textContent = totalCorridas;
-        document.getElementById('percentual-cancelado-motorista').textContent = ((canceladoPeloMotorista / totalCorridas) * 100).toFixed(2) + '%';
-        document.getElementById('percentual-cancelado-passageiro').textContent = ((canceladoPeloPassageiro / totalCorridas) * 100).toFixed(2) + '%';
-        document.getElementById('percentual-motoristas-homens').textContent = ((motoristasHomens / totalCorridas) * 100).toFixed(2) + '%';
-        document.getElementById('percentual-motoristas-mulheres').textContent = ((motoristasMulheres / totalCorridas) * 100).toFixed(2) + '%';
-        document.getElementById('percentual-motoristas-brancos').textContent = ((motoristasBrancos / totalCorridas) * 100).toFixed(2) + '%';
-        document.getElementById('percentual-motoristas-negros').textContent = ((motoristasNegros / totalCorridas) * 100).toFixed(2) + '%';
-        document.getElementById('percentual-motoristas-pardos').textContent = ((motoristasPardos / totalCorridas) * 100).toFixed(2) + '%';
-        document.getElementById('percentual-motoristas-jovens').textContent = ((motoristasJovens / totalCorridas) * 100).toFixed(2) + '%';
-        document.getElementById('percentual-motoristas-meia-idade').textContent = ((motoristasMeiaIdade / totalCorridas) * 100).toFixed(2) + '%';
-        document.getElementById('percentual-motoristas-idosos').textContent = ((motoristasIdosos / totalCorridas) * 100).toFixed(2) + '%';
-
-        const mediaAvaliacoes = totalAvaliacoes > 0 ? (somaAvaliacoes / totalAvaliacoes).toFixed(2) : 'Sem avaliações';
-        document.getElementById('media-avaliacoes').textContent = mediaAvaliacoes;
-    }
-</script>
-
+            // Atualizando a página com os resultados
+            document.getElementById('totalCorridas').innerText = totalCorridas;
+            document.getElementById('percentualCanceladoMotorista').innerText = percentualCanceladoMotorista.toFixed(2);
+            document.getElementById('percentualCanceladoPassageiro').innerText = percentualCanceladoPassageiro.toFixed(2);
+            document.getElementById('percentualMotoristasHomens').innerText = percentualHomens.toFixed(2);
+            document.getElementById('percentualMotoristasMulheres').innerText = percentualMulheres.toFixed(2);
+            document.getElementById('percentualMotoristasJovens').innerText = percentualJovens.toFixed(2);
+            document.getElementById('percentualMotoristasMeiaIdade').innerText = percentualMeiaIdade.toFixed(2);
+            document.getElementById('percentualMotoristasIdosos').innerText = percentualIdosos.toFixed(2);
+            document.getElementById('mediaAvaliacaoMotorista').innerText = mediaAvaliacaoMotorista.toFixed(2);
+        }
+    </script>
 </body>
 </html>
