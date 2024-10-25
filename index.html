@@ -4,61 +4,103 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Cancelamento de Corridas</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css">
 </head>
 <body>
     <h1>Análise de Cancelamento de Corridas</h1>
-    <p>Carregue os dados de um aplicativo de mobilidade urbana para realizar uma análise estatística das características das corridas.</p>
+    <p>Carregue os dados de um aplicativo de mobilidade urbana e explore visualizações de dados.</p>
 
-    <h3>Carregue seus dados:</h3>
-    <input type="file" id="csvFile" accept=".csv">
-    <button onclick="uploadCSV()">Carregar Dados</button>
-    <p id="fileInfo"></p>
+    <input type="file" id="fileInput" accept=".csv">
+    <button id="uploadButton">Carregar Dados</button>
     
-    <h3>Resultado da Análise</h3>
-    <div id="analysisResult"></div>
+    <h2>Resultado da Análise</h2>
+    <div id="result"></div>
+
+    <h2>Mapa Interativo</h2>
+    <div id="map" style="width: 100%; height: 400px;"></div>
 
     <script>
-        function uploadCSV() {
-            const fileInput = document.getElementById('csvFile');
+        // Função para carregar o CSV
+        document.getElementById('uploadButton').addEventListener('click', function () {
+            const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
-            const reader = new FileReader();
-
             if (file) {
-                reader.readAsText(file);
+                const reader = new FileReader();
                 reader.onload = function (e) {
-                    const csvData = e.target.result;
-                    document.getElementById('fileInfo').innerHTML = 'Arquivo carregado: ' + file.name;
-                    
-                    // URL da API a ser acessada
-                    const apiUrl = 'https://seu-api-url-aqui';
-                    
-                    // Prefixo do proxy CORS Anywhere
-                    const corsProxy = 'https://cors-anywhere.herokuapp.com/';
-                    
-                    // Fazer a solicitação HTTP via proxy CORS Anywhere
-                    fetch(corsProxy + apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ data: csvData })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('analysisResult').innerHTML = 'Resultado da análise: ' + JSON.stringify(data);
-                    })
-                    .catch(error => {
-                        console.error('Erro:', error);
-                        document.getElementById('analysisResult').innerHTML = 'Erro ao carregar dados: ' + error;
-                    });
+                    const text = e.target.result;
+                    processCSV(text); // Função que processará o CSV
                 };
-                reader.onerror = function (error) {
-                    console.log('Erro na leitura do arquivo: ', error);
-                };
+                reader.readAsText(file);
             } else {
-                document.getElementById('fileInfo').innerHTML = 'Nenhum arquivo selecionado.';
+                alert('Por favor, selecione um arquivo.');
             }
+        });
+
+        // Função para processar o CSV
+        function processCSV(data) {
+            const rows = data.split('\n').map(row => row.split(','));
+            // Exemplo básico de exibição do conteúdo do CSV:
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<pre>' + JSON.stringify(rows.slice(0, 5), null, 2) + '</pre>'; // Exibir as 5 primeiras linhas
         }
+
+        // Iniciar mapa Leaflet
+        const map = L.map('map').setView([-22.9068, -43.1729], 12); // Posição inicial no Rio de Janeiro
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Carregar os dados GeoJSON do IBGE (Limite de Favelas e Censo)
+        fetch('./Limite_Favelas_2019.geojson')
+            .then(response => response.json())
+            .then(data => {
+                L.geoJSON(data).addTo(map); // Adicionar limites de favelas no mapa
+            });
+
+        fetch('./Censo_2022__População_e_domicílios_por_bairros_(dados_preliminares).geojson')
+            .then(response => response.json())
+            .then(data => {
+                L.geoJSON(data).addTo(map); // Adicionar dados do censo ao mapa
+            });
+
+        // Função para autenticar na API do Fogo Cruzado e obter o token
+        async function obterTokenFogoCruzado() {
+            const response = await fetch('https://api-service.fogocruzado.org.br/api/v2/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: 'raquel.paiva@edu.unirio.br',
+                    password: 'sua senha' // Substitua pela sua senha
+                })
+            });
+
+            const data = await response.json();
+            return data.data.accessToken; // Retorna o token de acesso
+        }
+
+        // Função para obter dados de ocorrências usando o token
+        async function obterOcorrenciasFogoCruzado(token) {
+            const response = await fetch('https://api-service.fogocruzado.org.br/api/v2/occurrences', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+            console.log(data); // Exibir os dados no console para teste
+        }
+
+        // Autenticar e obter os dados de ocorrências ao iniciar o mapa
+        obterTokenFogoCruzado().then(token => {
+            obterOcorrenciasFogoCruzado(token);
+        }).catch(error => {
+            console.error('Erro ao obter token:', error);
+        });
+
     </script>
 </body>
 </html>
