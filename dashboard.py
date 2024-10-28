@@ -10,6 +10,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from collections import Counter
 from tabulate import tabulate
+from flask_cors import CORS
 import io
 import base64
 import json
@@ -21,6 +22,7 @@ nltk.download('stopwords')
 
 # Inicializar o Flask
 app = Flask(__name__, template_folder='.')
+CORS(app)
 
 # Variável global para armazenar os dados carregados
 df = None
