@@ -21,7 +21,12 @@ nltk.download('stopwords')
 # Inicializar o Flask
 app = Flask(__name__)
 
-# Funções de análise (retirei a parte que gera gráficos para simplificar, mas adicione conforme necessário)
+# Variável global para armazenar os dados carregados
+df = None
+
+# Funções de análise (mantenha todas as funções de análise definidas aqui, como no código original)
+
+# Mapear variáveis categóricas e zonas
 def apply_mappings(df):
     mappings = {
         'gender': {2: 'Feminino', 1: 'Masculino'},
@@ -33,39 +38,10 @@ def apply_mappings(df):
         df[col] = df[col].map(mapping)
     return df
 
-def create_and_display_tables(df):
-    general_info = pd.DataFrame({
-        'Description': ['Total Rows', 'Total Columns', 'Categorical Variables', 'Variables with Missing Data'],
-        'Value': [df.shape[0], df.shape[1], df.select_dtypes(include=['object', 'category']).shape[1], df.isnull().sum().gt(0).sum()]
-    })
-    
-    missing_data = df.isnull().sum().reset_index()
-    missing_data.columns = ['Variable', 'Missing Count']
-    missing_data = missing_data[missing_data['Missing Count'] > 0]
-    
-    return general_info, missing_data
-
-def create_personal_info_table(df):
-    summary_data = []
-    personal_info = ['gender', 'race', 'age_Range', 'fitness']
-    
-    # Calcular média da pontuação dos motoristas
-    driver_ratings = df.groupby('driver_id')['rating_score'].mean().reset_index()
-    driver_ratings.columns = ['driver_id', 'Pontuação Média do Motorista']
-    df = df.merge(driver_ratings, on='driver_id', how='left')
-    
-    for char in personal_info:
-        char_counts = df[char].value_counts(dropna=False)
-        total = char_counts.sum()
-        for value, count in char_counts.items():
-            avg_score = df[df[char] == value]['Pontuação Média do Motorista'].mean()
-            summary_data.append([char, value, count, f"{count / total:.2%}", f"{avg_score:.2f}"])
-    
-    return pd.DataFrame(summary_data, columns=['Característica', 'Classe', 'Contagem', 'Percentual', 'Pontuação Média'])
-
 # Rota para carregar e processar o arquivo CSV
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    global df
     file = request.files['file']
     if not file:
         return jsonify({"error": "Nenhum arquivo foi enviado!"}), 400
@@ -73,7 +49,7 @@ def upload_file():
     df = pd.read_csv(file)
     df = apply_mappings(df)
 
-    # Calcular tabelas e estatísticas
+    # Calcular tabelas e estatísticas iniciais
     general_info, missing_data = create_and_display_tables(df)
     personal_info_table = create_personal_info_table(df)
 
@@ -86,6 +62,36 @@ def upload_file():
 
     return jsonify(response_data)
 
+# Rota para aplicar filtros e retornar resultados de análise
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    global df
+    if df is None:
+        return jsonify({"error": "Nenhum arquivo foi carregado!"}), 400
+
+    # Obter filtros do frontend
+    data = request.get_json()
+    gender = data.get("gender")
+    age_range = data.get("ageRange")
+    radius = data.get("radius")
+    
+    # Aplicar filtros no DataFrame `df`
+    filtered_df = df.copy()
+    if gender:
+        filtered_df = filtered_df[filtered_df['gender'] == gender]
+    if age_range:
+        filtered_df = filtered_df[filtered_df['age_Range'] == age_range]
+    # Adicione outros filtros aqui, conforme necessário
+
+    # Realizar análise e gerar estatísticas
+    statistics_html = filtered_df.describe().to_html()  # Exemplo de estatísticas
+    heatmap_html = "<div>Aqui será exibido o mapa de calor.</div>"  # Placeholder para o mapa de calor
+
+    return jsonify({
+        "statisticsHtml": statistics_html,
+        "heatmapHtml": heatmap_html
+    })
+
 # Rota principal para exibir a interface
 @app.route('/')
 def index():
@@ -93,6 +99,7 @@ def index():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 # Mapear variáveis categóricas e zonas
 def apply_mappings(df):
