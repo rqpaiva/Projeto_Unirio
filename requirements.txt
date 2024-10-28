@@ -1,0 +1,9 @@
+flask
+pandas
+matplotlib
+seaborn
+geopandas
+networkx
+nltk
+gmaps
+gunicorn
