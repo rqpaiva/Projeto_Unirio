@@ -20,7 +20,7 @@ nltk.download('punkt')
 nltk.download('stopwords')
 
 # Inicializar o Flask
-app = Flask(__name__)
+app = Flask(__name__, template_folder='.')
 
 # Variável global para armazenar os dados carregados
 df = None
