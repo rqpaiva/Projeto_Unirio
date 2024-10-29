@@ -8,7 +8,7 @@ document.getElementById("uploadForm").onsubmit = async function(event) {
 
     // Enviar o arquivo para o backend
     try {
-        const response = await fetch("/upload", {
+        const response = await fetch("https://projeto-unirio.onrender.com/upload", {
             method: "POST",
             body: formData
         });
@@ -40,7 +40,7 @@ document.getElementById("applyFilters").onclick = async function() {
 
     try {
         // Enviar filtros para o backend
-        const response = await fetch("/analyze", {
+        const response = await fetch("https://projeto-unirio.onrender.com/analyze", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
