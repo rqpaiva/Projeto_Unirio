@@ -183,7 +183,7 @@ def analyze():
     })
 
 # Rota principal para exibir a interface
-@app.route('/')
+@app.route('/', methods=['POST', 'GET'])
 def index():
     return render_template('index.html')
 
