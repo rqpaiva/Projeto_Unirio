@@ -24,6 +24,7 @@
         </div>
     </div>
 
+    <!-- Área para exibir dados do arquivo -->
     <div class="containerTable">
         <div id="data">
             <h3>Dados do Arquivo</h3>
@@ -44,6 +45,7 @@
         </div>
     </div>
 
+    <!-- Área para exibir análises adicionais -->
     <div class="analysis-container">
         <h3>Análises Estatísticas</h3>
         <div id="general-info" class="table-section">
@@ -79,6 +81,7 @@
 
     <script>
         $(document).ready(function() {
+            // Inicializar DataTable para a tabela de dados do arquivo, se carregada
             if ($('#table-container table').length) {  
                 var table = $('#table-container table').DataTable({
                     "pageLength": 20, 
@@ -98,6 +101,7 @@
                     }
                 });
 
+                // Filtro de status
                 $('#statusFilter').on('change', function() {
                     var selectedValue = $(this).val();
                     table.column(0).search(selectedValue).draw();  
@@ -116,7 +120,7 @@
                 });
             }
 
-            // Popula uma tabela com os dados JSON fornecidos
+            // Função para popular as tabelas
             function populateTable(selector, data) {
                 let tableHTML = '<table class="table table-striped"><thead><tr>';
                 if (data.length > 0) {
@@ -138,7 +142,7 @@
                 $(selector).html(tableHTML);
             }
 
-            // Aciona a função de busca de análise ao enviar o formulário
+            // Evento para envio do formulário de upload
             $('#uploadForm').on('submit', function(e) {
                 e.preventDefault();
                 var formData = new FormData(this);
@@ -149,7 +153,7 @@
                     processData: false,
                     contentType: false,
                     success: function() {
-                        fetchAnalysis();
+                        location.reload();  // Recarrega a página para exibir o arquivo atualizado
                     },
                     error: function() {
                         alert('Erro ao carregar o arquivo.');
