@@ -8,6 +8,18 @@ df = None  # Variável global para armazenar dados carregados
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# Função para extrair informações de endereço
+def extract_address_info(address):
+    try:
+        address_dict = eval(address)  # Avalia a string como um dicionário
+        return pd.Series({
+            'road': address_dict.get('road'),
+            'suburb': address_dict.get('suburb'),
+            'state': address_dict.get('state')
+        })
+    except Exception:
+        return pd.Series({'road': None, 'suburb': None, 'state': None})
+
 # Funções de Mapeamento e Análise
 def apply_mappings(df):
     mappings = {
