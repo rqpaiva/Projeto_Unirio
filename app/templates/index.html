@@ -28,20 +28,7 @@
     <div class="containerTable">
         <div id="data">
             <h3>Dados do Arquivo</h3>
-            {% if data %}
-                <div>
-                    <label for="statusFilter">Filtrar por Status:</label>
-                    <select id="statusFilter" class="form-select">
-                        <option value="">Todos</option>
-                        <option value="Cancelada pelo Passageiro">Cancelada pelo Passageiro</option>
-                        <option value="Finalizada">Finalizada</option>
-                        <option value="Cancelada pelo Taxista">Cancelada pelo Taxista</option>
-                    </select>
-                </div>
-                <div id="table-container">{{ data | safe }}</div>  
-            {% else %}
-                <p>Nenhum arquivo carregado ainda.</p>
-            {% endif %}
+            <div id="table-container"></div>  
         </div>
     </div>
 
@@ -56,71 +43,60 @@
             <h4>Dados Ausentes</h4>
             <div id="missing-data-table"></div>
         </div>
-        <div id="personal-info" class="table-section">
-            <h4>Características Pessoais</h4>
-            <div id="personal-info-table"></div>
-        </div>
-        <div id="temporal-analysis" class="table-section">
-            <h4>Análise Temporal</h4>
-            <div id="temporal-analysis-table"></div>
-        </div>
-        <div id="spatial-info" class="table-section">
-            <h4>Informações Espaciais</h4>
-            <div id="spatial-info-table"></div>
-        </div>
-        <div id="comment-analysis" class="table-section">
-            <h4>Análise de Comentários</h4>
-            <div id="comment-analysis-table"></div>
-        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
-    <script src="{{ url_for('static', filename='scripts/script.js') }}"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 
     <script>
         $(document).ready(function() {
-            // Inicializar DataTable para a tabela de dados do arquivo, se carregada
-            if ($('#table-container table').length) {  
-                var table = $('#table-container table').DataTable({
-                    "pageLength": 20, 
-                    "language": {
-                        "lengthMenu": "Mostrar _MENU_ linhas por página",
-                        "zeroRecords": "Nenhum dado encontrado",
-                        "info": "Mostrando página _PAGE_ de _PAGES_",
-                        "infoEmpty": "Nenhum dado disponível",
-                        "infoFiltered": "(filtrado de _MAX_ total de registros)",
-                        "search": "Buscar:",
-                        "paginate": {
-                            "first": "Primeiro",
-                            "last": "Último",
-                            "next": "Próximo",
-                            "previous": "Anterior"
-                        }
+            // Evento de envio do formulário de upload
+            $('#uploadForm').on('submit', function(e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+                $.ajax({
+                    url: '/upload',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        $('#table-container').html(response.data_html);
+                        $('#table-container table').DataTable({
+                            "pageLength": 20,
+                            "language": {
+                                "lengthMenu": "Mostrar _MENU_ linhas por página",
+                                "zeroRecords": "Nenhum dado encontrado",
+                                "info": "Mostrando página _PAGE_ de _PAGES_",
+                                "infoEmpty": "Nenhum dado disponível",
+                                "infoFiltered": "(filtrado de _MAX_ total de registros)",
+                                "search": "Buscar:",
+                                "paginate": {
+                                    "first": "Primeiro",
+                                    "last": "Último",
+                                    "next": "Próximo",
+                                    "previous": "Anterior"
+                                }
+                            }
+                        });
+                        fetchAnalysis(); // Busca e exibe as análises adicionais
+                    },
+                    error: function() {
+                        alert('Erro ao carregar o arquivo.');
                     }
                 });
-
-                // Filtro de status
-                $('#statusFilter').on('change', function() {
-                    var selectedValue = $(this).val();
-                    table.column(0).search(selectedValue).draw();  
-                });
-            }
+            });
 
             // Função para buscar análises adicionais após o upload
             function fetchAnalysis() {
                 $.post('/analyze', function(response) {
                     populateTable('#general-info-table', response.general_info);
                     populateTable('#missing-data-table', response.missing_data);
-                    populateTable('#personal-info-table', response.personal_info_table);
-                    populateTable('#temporal-analysis-table', response.temporal_analysis);
-                    populateTable('#spatial-info-table', response.spatial_info_table);
-                    populateTable('#comment-analysis-table', response.comment_analysis);
                 });
             }
 
-            // Função para popular as tabelas
+            // Popula uma tabela com os dados JSON fornecidos
             function populateTable(selector, data) {
                 let tableHTML = '<table class="table table-striped"><thead><tr>';
                 if (data.length > 0) {
@@ -141,25 +117,6 @@
                 }
                 $(selector).html(tableHTML);
             }
-
-            // Evento para envio do formulário de upload
-            $('#uploadForm').on('submit', function(e) {
-                e.preventDefault();
-                var formData = new FormData(this);
-                $.ajax({
-                    url: '/',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function() {
-                        location.reload();  // Recarrega a página para exibir o arquivo atualizado
-                    },
-                    error: function() {
-                        alert('Erro ao carregar o arquivo.');
-                    }
-                });
-            });
         });
     </script>
 </body>
