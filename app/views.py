@@ -129,15 +129,13 @@ def home():
 
                 # Filtrar e extrair colunas
                 address_info = df['Address_client_dict'].apply(extract_address_info)
-                filtered_data = pd.concat([df[['status']], address_info], axis=1)
-                
+                filtered_data = pd.concat([df[['status'], [''created_at]], address_info], axis=1)
 
                 filtered_data.rename(columns={
                     'road': 'Rua',
                     'suburb': 'Bairro',
                     'state': 'Estado',
-                    'status': 'Status',
-                    
+                    'status': 'Status'
                 }, inplace=True)
 
                 data_html = filtered_data.to_html(classes='table table-striped', index=False)
@@ -167,11 +165,7 @@ def analyze():
         "general_info": general_info.to_dict(orient='records'),
         "missing_data": missing_data.to_dict(orient='records'),
         # Adicione outras tabelas de análise conforme desejado
-        "personal_info_table": personal_info_table.to_dict(orient='records'),
-        "temporal_analysis": [t.to_dict(orient='records') for t in temporal_analysis],
-        "spatial_info_table": spatial_info_table.to_dict(orient='records'),
-        "comment_analysis": comment_analysis.to_dict(orient='records')
-
+        
     }
     return jsonify(response_data)
 
