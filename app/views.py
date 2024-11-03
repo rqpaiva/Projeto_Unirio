@@ -135,7 +135,8 @@ def home():
                     'road': 'Rua',
                     'suburb': 'Bairro',
                     'state': 'Estado',
-                    'status': 'Status'
+                    'status': 'Status',
+                    'created_at': 'data'
                 }, inplace=True)
 
                 data_html = filtered_data.to_html(classes='table table-striped', index=False)
@@ -169,6 +170,7 @@ def analyze():
         "temporal_analysis": [t.to_dict(orient='records') for t in temporal_analysis],
         "spatial_info_table": spatial_info_table.to_dict(orient='records'),
         "comment_analysis": comment_analysis.to_dict(orient='records')
+
     }
     return jsonify(response_data)
 
