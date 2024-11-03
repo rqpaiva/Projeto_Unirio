@@ -136,7 +136,7 @@ def home():
                     'suburb': 'Bairro',
                     'state': 'Estado',
                     'status': 'Status',
-                    'created_at': 'data'
+                    
                 }, inplace=True)
 
                 data_html = filtered_data.to_html(classes='table table-striped', index=False)
