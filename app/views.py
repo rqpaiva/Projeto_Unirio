@@ -129,7 +129,7 @@ def home():
 
                 # Filtrar e extrair colunas
                 address_info = df['Address_client_dict'].apply(extract_address_info)
-                filtered_data = pd.concat([df[['status'], df['created_at']], address_info], axis=1)
+                filtered_data = pd.concat([df[['status','created_at'], address_info], axis=1)
                 
 
                 filtered_data.rename(columns={
@@ -137,7 +137,7 @@ def home():
                     'suburb': 'Bairro',
                     'state': 'Estado',
                     'status': 'Status',
-                    'created_at': 'Data'
+                    'created_at':'Data'
                     
                 }, inplace=True)
 
