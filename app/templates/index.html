@@ -72,8 +72,17 @@
         <h3>Dados Faltantes</h3>
         <div id="missing-data" class="containertable"></div>
 
-        <h3>Outras Análises</h3>
-        <div id="additional-analyses" class="containertable"></div>
+        <h3>Informações Pessoais</h3>
+        <div id="personal-info" class="containertable"></div>
+
+        <h3>Análise Temporal</h3>
+        <div id="temporal-analysis" class="containertable"></div>
+
+        <h3>Informações Espaciais</h3>
+        <div id="spatial-info" class="containertable"></div>
+
+        <h3>Análise de Comentários</h3>
+        <div id="comment-analysis" class="containertable"></div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js" integrity="sha512-GWzVrcGlo0TxTRvz9ttioyYJ+Wwk9Ck0G81D+eO63BaqHaJ3YZX9wuqjwgfcV/MrB2PhaVX9DkYVhbFpStnqpQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -119,8 +128,22 @@
                         if (response.missing_data) {
                             $('#missing-data').html(createTable(response.missing_data));
                         }
-                        if (response.additional_analysis) {
-                            $('#additional-analyses').html(createTable(response.additional_analysis));
+                        if (response.personal_info_table) {
+                            $('#personal-info').html(createTable(response.personal_info_table));
+                        }
+                        if (response.temporal_analysis) {
+                            let temporalHtml = '';
+                            for (const [key, data] of Object.entries(response.temporal_analysis)) {
+                                temporalHtml += `<h4>${key}</h4>`;
+                                temporalHtml += createTable(data);
+                            }
+                            $('#temporal-analysis').html(temporalHtml);
+                        }
+                        if (response.spatial_info_table) {
+                            $('#spatial-info').html(createTable(response.spatial_info_table));
+                        }
+                        if (response.comment_analysis) {
+                            $('#comment-analysis').html(createTable(response.comment_analysis));
                         }
                     },
                     error: function() {
