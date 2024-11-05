@@ -158,22 +158,27 @@ def analyze():
     if df is None:
         return jsonify({"error": "Nenhum arquivo foi carregado!"}), 400
 
-    # Análises estatísticas adicionais
-    general_info, missing_data = create_and_display_tables(df)
-    personal_info_table = create_personal_info_table(df)
-    temporal_analysis = {key: value.to_dict(orient='records') for key, value in create_temporal_analysis(df).items()}
-    spatial_info_table = create_spatial_info_table(df)
-    comment_analysis = analyze_comments(df)
+    try:
+        # Análises estatísticas adicionais
+        general_info, missing_data = create_and_display_tables(df)
+        personal_info_table = create_personal_info_table(df)
+        temporal_analysis = {key: value.to_dict(orient='records') for key, value in create_temporal_analysis(df).items()}
+        spatial_info_table = create_spatial_info_table(df)
+        comment_analysis = analyze_comments(df)
 
-    response_data = {
-        "general_info": general_info.to_dict(orient='records'),
-        "missing_data": missing_data.to_dict(orient='records'),
-        "personal_info_table": personal_info_table.to_dict(orient='records'),
-        "temporal_analysis": temporal_analysis,
-        "spatial_info_table": spatial_info_table.to_dict(orient='records'),
-        "comment_analysis": comment_analysis.to_dict(orient='records')        
-    }
-    return jsonify(response_data)
+        response_data = {
+            "general_info": general_info.to_dict(orient='records'),
+            "missing_data": missing_data.to_dict(orient='records'),
+            "personal_info_table": personal_info_table.to_dict(orient='records'),
+            "temporal_analysis": temporal_analysis,
+            "spatial_info_table": spatial_info_table.to_dict(orient='records'),
+            "comment_analysis": comment_analysis.to_dict(orient='records')        
+        }
+        return jsonify(response_data)
+    
+    except Exception as e:
+        print(f"Erro na análise: {e}")  # Log para verificar erros no servidor
+        return jsonify({"error": f"Erro ao realizar análise: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
