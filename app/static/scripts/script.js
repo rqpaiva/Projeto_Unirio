@@ -16,9 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } else {
             fileLabel.textContent = 'Nenhum arquivo selecionado';
-            fileLabel.classList.remove('hidenButton');
-            buttonSubmit.classList.add('hidenButton');
-            analyzeButton.disabled = true; // Desabilite o botão novamente se não houver arquivo
         }
     });
     // Habilite o botão "Realizar Análise" após o envio do formulário de upload
