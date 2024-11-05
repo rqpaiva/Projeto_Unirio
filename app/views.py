@@ -165,7 +165,10 @@ def analyze():
         "general_info": general_info.to_dict(orient='records'),
         "missing_data": missing_data.to_dict(orient='records'),
         # Adicione outras tabelas de análise conforme desejado
-        
+        "personal_info_table": personal_info_table.to_dict(orient='records'),
+        "temporal_analysis": temporal_analysis.to_dict(orient='records'),
+        "spatial_info_table": spatial_info_table.to_dict(orient='records'),
+        "comment_analysis": comment_analysis.to_dict(orient='records')        
     }
     return jsonify(response_data)
 
