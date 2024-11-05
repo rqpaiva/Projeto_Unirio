@@ -159,6 +159,9 @@ def analyze():
         return jsonify({"error": "Nenhum arquivo foi carregado!"}), 400
 
     try:
+        # Adicione um log para verificar o conteúdo do df
+        print("Iniciando análise. Primeiras linhas do DataFrame:", df.head())
+
         # Análises estatísticas adicionais
         general_info, missing_data = create_and_display_tables(df)
         personal_info_table = create_personal_info_table(df)
@@ -179,6 +182,7 @@ def analyze():
     except Exception as e:
         print(f"Erro na análise: {e}")  # Log para verificar erros no servidor
         return jsonify({"error": f"Erro ao realizar análise: {str(e)}"}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
