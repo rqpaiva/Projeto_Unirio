@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fileLabel.textContent = 'Nenhum arquivo selecionado';
         }
     });
+
     // Habilite o botão "Realizar Análise" após o envio do formulário de upload
     $('#uploadForm').on('submit', function(e) {
         e.preventDefault();
@@ -45,27 +46,30 @@ document.addEventListener('DOMContentLoaded', function() {
             url: '/analyze',
             type: 'POST',
             success: function(response) {
-                if (response.general_info) {
+                // Verifica e renderiza as tabelas apenas se contiverem dados
+                if (response.general_info && response.general_info.length > 0) {
                     $('#general-info').html(createTable(response.general_info));
                 }
-                if (response.missing_data) {
+                if (response.missing_data && response.missing_data.length > 0) {
                     $('#missing-data').html(createTable(response.missing_data));
                 }
-                if (response.personal_info_table) {
+                if (response.personal_info_table && response.personal_info_table.length > 0) {
                     $('#personal-info').html(createTable(response.personal_info_table));
                 }
                 if (response.temporal_analysis) {
                     let temporalHtml = '';
                     for (const [key, data] of Object.entries(response.temporal_analysis)) {
-                        temporalHtml += `<h4>${key}</h4>`;
-                        temporalHtml += createTable(data);
+                        if (data && data.length > 0) {  // Verifique se há dados antes de criar a tabela
+                            temporalHtml += `<h4>${key}</h4>`;
+                            temporalHtml += createTable(data);
+                        }
                     }
                     $('#temporal-analysis').html(temporalHtml);
                 }
-                if (response.spatial_info_table) {
+                if (response.spatial_info_table && response.spatial_info_table.length > 0) {
                     $('#spatial-info').html(createTable(response.spatial_info_table));
                 }
-                if (response.comment_analysis) {
+                if (response.comment_analysis && response.comment_analysis.length > 0) {
                     $('#comment-analysis').html(createTable(response.comment_analysis));
                 }
             },
@@ -78,6 +82,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Função para criar a tabela HTML a partir dos dados JSON
     function createTable(data) {
+        if (!data || data.length === 0) return '<p>Nenhuma informação disponível.</p>'; // Retorna uma mensagem se não houver dados
+
         var table = '<table class="table table-striped">';
         table += '<thead><tr>';
         Object.keys(data[0]).forEach(function(key) {
@@ -88,13 +94,13 @@ document.addEventListener('DOMContentLoaded', function() {
         data.forEach(function(row) {
             table += '<tr>';
             Object.values(row).forEach(function(value) {
-                table += '<td>' + value + '</td>';
+                // Verifica se o valor é NaN ou indefinido, substituindo por um texto amigável
+                table += '<td>' + (value !== undefined && !isNaN(value) ? value : 'N/A') + '</td>';
             });
             table += '</tr>';
         });
 
         table += '</tbody></table>';
         return table;
-    }	
-	
+    }
 });
