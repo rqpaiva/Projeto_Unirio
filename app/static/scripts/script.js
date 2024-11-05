@@ -1,20 +1,48 @@
-$(document).ready(function() {
+document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('fileInput');
     const fileLabel = document.querySelector('.custom-file-label');
     const textUpload = document.querySelector('.text-upload');
     const buttonSubimit = document.querySelector('.buttonSubimit');
+    const analyzeButton = document.getElementById('analyze-btn');
+
+    // Desabilite o botão "Realizar Análise" até que o upload seja bem-sucedido
+    analyzeButton.disabled = true;
     
     fileInput.addEventListener('change', function() {
         if (fileInput.files.length > 0) {
             textUpload.textContent = fileInput.files[0].name;
             fileLabel.classList.add('hidenButton');
-            buttonSubimit.classList.remove('hidenButton');
+            buttonSubimit.classList.remove('hidenButton')
+
         } else {
             fileLabel.textContent = 'Nenhum arquivo selecionado';
+            fileLabel.classList.remove('hidenButton');
+            buttonSubmit.classList.add('hidenButton');
+            analyzeButton.disabled = true; // Desabilite o botão novamente se não houver arquivo
         }
     });
+    // Habilite o botão "Realizar Análise" após o envio do formulário de upload
+    $('#uploadForm').on('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        $.ajax({
+            url: '/',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                analyzeButton.disabled = false; // Habilita o botão "Realizar Análise"
+                alert('Arquivo carregado com sucesso. Agora você pode realizar a análise.');
+            },
+            error: function(xhr, status, error) {
+                alert(`Erro ao carregar o arquivo. Status: ${status}, Erro: ${error}`);
+                console.error("Detalhes da resposta:", xhr.responseText);
+            }
+        });
+    });
 
-    // Função para realizar a análise e exibir as novas tabelas
+    // Ação do botão "Realizar Análise"
     $('#analyze-btn').on('click', function() {
         $.ajax({
             url: '/analyze',
@@ -70,10 +98,6 @@ $(document).ready(function() {
 
         table += '</tbody></table>';
         return table;
-    }
+    }	
+	
 });
-
-
-
-
-
