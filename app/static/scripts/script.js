@@ -14,4 +14,4 @@ document.addEventListener('DOMContentLoaded', function() {
             fileLabel.textContent = 'Nenhum arquivo selecionado';
         }
     });
-}
+});
